@@ -411,7 +411,7 @@ func (c *ConsulAlertClient) NewAlerts() []Check {
 				//send the alerts to PagerDuty Alerts channel
 				pd := fmt.Sprintf("consul-alerts/config/services/%s/PDKey", status.HealthCheck.ServiceID)
 				message := fmt.Sprintf("Consul Alert :: Service : %s is in CRTICAL state", status.HealthCheck.ServiceID)
-				pdkey, _, err := kvApi.Get(pd, nil)
+				pdkey, _, err := c.api.KV().Get(pd, nil)
                                 pdKey := string(pdkey.Value)
 				if err != nil {
 					event1 := pagerduty.Event{
