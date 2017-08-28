@@ -418,7 +418,7 @@ func (c *ConsulAlertClient) NewAlerts() []Check {
 						Type:        "trigger",
 						ServiceKey:  pdKey,
 						Description: message,
-						IncidentKey: status.HealthCheck.ServiceID,
+						IncidentKey: status.HealthCheck.ServiceName,
 					}
 					resp1, err := pagerduty.CreateEvent(event1)
 					if err != nil {
