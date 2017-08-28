@@ -413,6 +413,7 @@ func (c *ConsulAlertClient) NewAlerts() []Check {
 				message := fmt.Sprintf("Consul Alert :: Service : %s is in CRTICAL state", status.HealthCheck.ServiceName)
 				pdkey, _, err := c.api.KV().Get(pd, nil)
                                 pdKey := string(pdkey.Value)
+				fmt.Printf("pdKey is %v  and error is %v \n", pdKey, err)
 				if err != nil {
 					event1 := pagerduty.Event{
 						Type:        "trigger",
