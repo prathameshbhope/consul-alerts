@@ -10,7 +10,7 @@ import (
 
 	"encoding/json"
 
-	pagerduty "github.com/PagerDuty/go-pagerduty"
+	pagerduty "github.com/prathameshbhope/consul-alerts/Godeps/_workspace/src/github.com/PagerDuty/go-pagerduty"
 	notifier "github.com/prathameshbhope/consul-alerts/notifier"
 
 	log "github.com/prathameshbhope/consul-alerts/Godeps/_workspace/src/github.com/Sirupsen/logrus"
