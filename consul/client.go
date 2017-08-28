@@ -10,10 +10,12 @@ import (
 
 	"encoding/json"
 
-	notifier "github.com/AcalephStorage/consul-alerts/notifier"
+	pagerduty "github.com/PagerDuty/go-pagerduty"
+	notifier "github.com/prathameshbhope/consul-alerts/notifier"
 
-	log "github.com/AcalephStorage/consul-alerts/Godeps/_workspace/src/github.com/Sirupsen/logrus"
-	consulapi "github.com/AcalephStorage/consul-alerts/Godeps/_workspace/src/github.com/hashicorp/consul/api"
+	log "github.com/prathameshbhope/consul-alerts/Godeps/_workspace/src/github.com/Sirupsen/logrus"
+	consulapi "github.com/prathameshbhope/consul-alerts/Godeps/_workspace/src/github.com/hashicorp/consul/api"
+	//https://github.com/prathameshbhope/consul-alerts.git
 )
 
 const (
@@ -405,6 +407,25 @@ func (c *ConsulAlertClient) NewAlerts() []Check {
 
 			if !c.IsBlacklisted(status.HealthCheck) {
 				alerts = append(alerts, *status.HealthCheck)
+
+				//send the alerts to PagerDuty Alerts channel
+				pd := fmt.Sprintf("consul-alerts/config/services/%s/PDKey", status.HealthCheck.ServiceID)
+				message := fmt.Sprintf("Consul Alert :: Service : %s is in CRTICAL state", status.HealthCheck.ServiceID)
+				pdkey, _, err := kvApi.Get(pd, nil)
+                                pdKey := string(pdkey.Value)
+				if err != nil {
+					event1 := pagerduty.Event{
+						Type:        "trigger",
+						ServiceKey:  pdKey,
+						Description: message,
+						IncidentKey: status.HealthCheck.ServiceID,
+					}
+					resp1, err := pagerduty.CreateEvent(event1)
+					if err != nil {
+						log.Println(resp1)
+						log.Fatalln("ERROR in PD:", err)
+					}
+				}
 			}
 		}
 	}
@@ -748,7 +769,9 @@ func (c *ConsulAlertClient) IsBlacklisted(check *Check) bool {
 
 	node := check.Node
 	nodeCheckKey := fmt.Sprintf("consul-alerts/config/checks/blacklist/nodes/%s", node)
-	nodeBlacklisted := func() bool { return c.CheckKeyExists(nodeCheckKey) || c.CheckKeyMatchesRegexp("consul-alerts/config/checks/blacklist/nodes", node) }
+	nodeBlacklisted := func() bool {
+		return c.CheckKeyExists(nodeCheckKey) || c.CheckKeyMatchesRegexp("consul-alerts/config/checks/blacklist/nodes", node)
+	}
 
 	service := "_"
 	serviceBlacklisted := func() bool { return false }
@@ -756,13 +779,17 @@ func (c *ConsulAlertClient) IsBlacklisted(check *Check) bool {
 		service = check.ServiceID
 		serviceCheckKey := fmt.Sprintf("consul-alerts/config/checks/blacklist/services/%s", service)
 
-		serviceBlacklisted = func() bool { return c.CheckKeyExists(serviceCheckKey) || c.CheckKeyMatchesRegexp("consul-alerts/config/checks/blacklist/services", service) }
+		serviceBlacklisted = func() bool {
+			return c.CheckKeyExists(serviceCheckKey) || c.CheckKeyMatchesRegexp("consul-alerts/config/checks/blacklist/services", service)
+		}
 	}
 
 	checkID := check.CheckID
 	checkCheckKey := fmt.Sprintf("consul-alerts/config/checks/blacklist/checks/%s", checkID)
 
-	checkBlacklisted := func() bool { return c.CheckKeyExists(checkCheckKey) || c.CheckKeyMatchesRegexp("consul-alerts/config/checks/blacklist/checks", checkID) }
+	checkBlacklisted := func() bool {
+		return c.CheckKeyExists(checkCheckKey) || c.CheckKeyMatchesRegexp("consul-alerts/config/checks/blacklist/checks", checkID)
+	}
 
 	singleKey := fmt.Sprintf("consul-alerts/config/checks/blacklist/single/%s/%s/%s", node, service, checkID)
 	singleBlacklisted := func() bool { return c.CheckKeyExists(singleKey) }
